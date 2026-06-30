@@ -1,0 +1,17 @@
+name: jaffle_tpch
+version: "1.0.0"
+config-version: 2
+
+profile: jaffle_tpch
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+models:
+  jaffle_tpch:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

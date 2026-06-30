@@ -1,0 +1,103 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      qod_version:
+        description: "qod image tag to test against"
+        default: "latest"
+  schedule:
+    # nightly conformance run (the suite is slow; see the conformance job)
+    - cron: "0 3 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dbt]'
+
+      - name: Import + adapter registers
+        run: |
+          python -c "from dbt.adapters.qod import Plugin, QodAdapter; assert QodAdapter.type() == 'qod'"
+
+      - name: Build distributions
+        run: |
+          python -m pip install build twine
+          python -m build
+          twine check dist/*
+
+  # Full dbt-tests-adapter conformance suite against a live qod edge. Slow: each
+  # fresh connection to the edge pays a fixed ~10s DuckLake cold-attach cost and
+  # the suite reconnects per dbt invocation, so this runs on demand and nightly
+  # rather than on every push.
+  conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    env:
+      QOD_VERSION: ${{ github.event.inputs.qod_version || 'latest' }}
+      COMPOSE: .github/ci/qod-stack.yml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install adapter + test deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Start qod stack
+        run: docker compose -f "$COMPOSE" up -d
+
+      - name: Wait for manager
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:20900/health >/dev/null 2>&1; then
+              echo "manager ready"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::manager did not become ready"
+          docker compose -f "$COMPOSE" logs --no-color quack | tail -200
+          exit 1
+
+      - name: Run conformance suite
+        env:
+          QOD_HOST: localhost
+          QOD_PORT: "31338"
+          QOD_DATABASE: acme_tpch
+          QOD_TENANT: acme
+          QOD_POOL: bi
+          QOD_USER: admin
+          QOD_PASSWORD: admin
+          QOD_SUPERUSER: "true"
+          QOD_USE_TLS: "false"
+          QOD_TLS_SKIP_VERIFY: "false"
+        run: pytest tests/functional -p no:cacheprovider -ra
+
+      - name: qod logs
+        if: always()
+        run: docker compose -f "$COMPOSE" logs --no-color quack | tail -300
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f "$COMPOSE" down -v

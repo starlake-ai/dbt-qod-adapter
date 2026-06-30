@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: tpch
+    database: acme_tpch
+    schema: tpch1
+    description: TPC-H tables loaded into the acme tenant-db.
+    tables:
+      - name: customer
+      - name: orders
+      - name: nation
+      - name: region

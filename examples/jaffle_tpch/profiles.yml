@@ -1,0 +1,20 @@
+# Local profile for the jaffle_tpch demo against a qod edge seeded with TPC-H.
+# Models materialize into a dedicated schema (dbt_jaffle) in the acme_tpch
+# tenant-db, leaving the tpch1 source schema untouched.
+jaffle_tpch:
+  target: dev
+  outputs:
+    dev:
+      type: qod
+      host: localhost
+      port: 31338
+      database: acme_tpch      # tenant-db / DuckLake catalog
+      schema: dbt_jaffle       # where dbt writes models
+      tenant: acme
+      pool: bi
+      username: admin
+      password: admin
+      superuser: true
+      use_tls: true
+      tls_skip_verify: true
+      threads: 4

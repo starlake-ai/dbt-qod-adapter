@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_customer
+    columns:
+      - name: customer_key
+        tests: [not_null, unique]
+  - name: stg_orders
+    columns:
+      - name: order_key
+        tests: [not_null, unique]
+  - name: customer_order_summary
+    columns:
+      - name: market_segment
+        tests: [not_null, unique]
+  - name: orders_incremental
+    columns:
+      - name: order_key
+        tests: [not_null, unique]

@@ -1,0 +1,27 @@
+fixed:
+  type: qod
+prompts:
+  host:
+    default: localhost
+  port:
+    default: 31338
+    hint: FlightSQL edge port
+  database:
+    hint: "qod tenant-db / DuckLake catalog (e.g. acme_tpch)"
+  schema:
+    hint: "DuckLake schema (e.g. tpch1)"
+  tenant:
+    hint: "qod tenant routing header (e.g. acme)"
+  pool:
+    hint: "qod pool routing header (e.g. bi)"
+  username:
+    hint: "edge user"
+  password:
+    hide_input: true
+  use_tls:
+    default: true
+  tls_skip_verify:
+    default: true
+    hint: "skip TLS verification (self-signed dev cert)"
+  threads:
+    default: 4

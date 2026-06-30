@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbt-qod"
+description = "dbt adapter for the Quack-on-Demand FlightSQL edge (DuckDB / DuckLake)"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Starlake", email = "hello@starlake.ai" }]
+keywords = ["dbt", "flightsql", "duckdb", "ducklake", "arrow", "adbc"]
+dynamic = ["version"]
+dependencies = [
+  "dbt-common>=1.0,<2.0",
+  "dbt-adapters>=1.0,<2.0",
+  "adbc-driver-flightsql>=1.0",
+  "adbc-driver-manager>=1.0",
+  "pyarrow>=14",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Database",
+]
+
+[project.urls]
+Homepage = "https://github.com/starlake-ai/dbt-qod"
+Repository = "https://github.com/starlake-ai/dbt-qod"
+Issues = "https://github.com/starlake-ai/dbt-qod/issues"
+"Quack-on-Demand" = "https://github.com/starlake-ai/quack-on-demand"
+
+[project.optional-dependencies]
+# dbt-core is a runtime peer; pin a compatible range for convenience installs.
+dbt = ["dbt-core>=1.8,<2.0"]
+# Standard dbt adapter conformance suite + test deps.
+test = [
+  "dbt-tests-adapter>=1.0,<2.0",
+  "dbt-core>=1.8,<2.0",
+  "pytest>=7",
+  "pytest-dotenv",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "dbt.adapters.qod.__version__.version" }
+
+[tool.setuptools.packages.find]
+include = ["dbt", "dbt.*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"dbt.include.qod" = ["dbt_project.yml", "profile_template.yml", "macros/*.sql"]

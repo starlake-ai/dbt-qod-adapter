@@ -1,0 +1,49 @@
+# Minimal Quack-on-Demand stack for CI conformance tests.
+#
+# Brings up Postgres + the published qod manager image, bootstrapping the demo
+# tenants (acme / acme_tpch / pool bi) via the bundled manifest - no TPC-H data
+# load (the conformance suite creates its own schemas and models).
+#
+#   docker compose -f .github/ci/qod-stack.yml up -d
+#   curl http://localhost:20900/api/health         # readiness
+#   ... run tests against grpc://localhost:31338 (TLS off) ...
+#   docker compose -f .github/ci/qod-stack.yml down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: azizam
+      POSTGRES_DB: qod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d qod"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  quack:
+    image: starlakeai/quack-on-demand:${QOD_VERSION:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      QOD_PG_HOST: postgres
+      QOD_PG_PORT: "5432"
+      QOD_PG_USER: postgres
+      QOD_PG_PASSWORD: azizam
+      QOD_PG_DBNAME: qod
+      # Create acme / acme_tpch / pool bi (+ globex) from the bundled manifest.
+      QOD_BOOTSTRAP_YAML: classpath:bootstrap-demo.yaml
+      # Plain gRPC (no TLS) so the adapter connects with use_tls=false.
+      PROXY_TLS_ENABLED: "false"
+      QOD_AUTH_DB_ENABLED: "true"
+      QOD_ADMIN_USERNAME: admin
+      QOD_ADMIN_PASSWORD: admin
+      # ACL off: the suite connects as superuser anyway, and off keeps it simple.
+      QOD_ACL_ENABLED: "false"
+    ports:
+      - "20900:20900" # REST (health)
+      - "31338:31338" # FlightSQL edge
+    # Quack nodes are spawned as child processes inside this container and reached
+    # by the edge over container-local ports, so no host port mapping is needed.
