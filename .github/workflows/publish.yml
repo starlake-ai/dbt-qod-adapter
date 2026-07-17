@@ -1,9 +1,9 @@
 name: publish
 
-# Publishes to PyPI on a version tag (e.g. v0.1.0) using PyPI Trusted Publishing
-# (OIDC) - no stored token. Configure the project on PyPI:
-#   PyPI -> project -> Publishing -> add a GitHub trusted publisher pointing at
-#   this repo + workflow `publish.yml` + environment `pypi`.
+# Publishes to PyPI on a version tag (e.g. v0.1.0) using an API token stored in
+# the `PYPI_TOKEN` repository secret (Settings -> Secrets and variables ->
+# Actions). Create the token on PyPI (Account settings -> API tokens), scoped
+# to the dbt-qod project once it exists.
 
 on:
   push:
@@ -33,9 +33,6 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write # required for Trusted Publishing (OIDC)
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -43,3 +40,5 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
