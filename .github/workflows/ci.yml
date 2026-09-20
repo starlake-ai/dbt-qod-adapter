@@ -50,6 +50,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    # Non-blocking until starlake-ai/quack-on-demand#108 is fixed: a node-side
+    # memory corruption in the DuckLake commit flush intermittently fails
+    # write-materializing models (~10-40% of full-suite runs). It reproduces
+    # even with a single serial client on a single node, so no stack-config
+    # change avoids it. The job still runs and surfaces the failure in its logs;
+    # continue-on-error keeps it from marking the run failed. Remove this once
+    # the quack library bump lands.
+    continue-on-error: true
     env:
       QOD_VERSION: ${{ github.event.inputs.qod_version || 'latest' }}
       COMPOSE: .github/ci/qod-stack.yml
