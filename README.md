@@ -1,5 +1,7 @@
 # dbt-qod
 
+[![CI](https://github.com/starlake-ai/dbt-qod-adapter/actions/workflows/ci.yml/badge.svg)](https://github.com/starlake-ai/dbt-qod-adapter/actions/workflows/ci.yml)
+
 A [dbt](https://www.getdbt.com/) adapter for the
 [Quack-on-Demand](https://github.com/starlake-ai/quack-on-demand) FlightSQL edge.
 
